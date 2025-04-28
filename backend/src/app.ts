@@ -3,6 +3,7 @@ import session from 'express-session';
 import passport from 'passport';
 import dotenv from 'dotenv';
 import path from 'path';
+import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import { scheduleJobs } from './services/scheduler';
 
@@ -20,6 +21,11 @@ const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(cors({
+    origin: 'http://localhost:3000', // Frontend's address
+    credentials: true, // Allow cookies / sessions to be sent
+}));
 
 // Session config
 app.use(
@@ -40,6 +46,8 @@ import './auth/google';
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/borrow', borrowRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 
 // Start scheduled jobs (reminders)
 scheduleJobs(prisma);
