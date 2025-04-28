@@ -3,8 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { ensureAuth } from '../middlewares/ensureAuth';
-import { ensureAdmin } from '../middlewares/ensureAdmin';
+import {ensureAdmin, ensureAuth} from '../middlewares/ensureAuth';
 import { getAdminList, addAdmin, removeAdmin } from '../utils/adminList';
 
 const prisma = new PrismaClient();
