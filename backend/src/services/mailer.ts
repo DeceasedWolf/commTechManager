@@ -38,7 +38,7 @@ Comm Tech Dept.`;
 
     try {
         await transporter.sendMail({
-            from: process.env.SMTP_SENDER,
+            from: process.env.FROM_EMAIL,
             to,
             subject,
             text,
@@ -65,11 +65,11 @@ export async function sendReturnNotice(
 The item '${itemName}' has been marked as returned by ${borrowerName}.
 
 Regards,
-Comm Tech Dept.`;
+Comm Tech Dept. Bot`;
 
     try {
         await transporter.sendMail({
-            from: process.env.SMTP_SENDER,
+            from: process.env.FROM_EMAIL,
             to: admins.join(','),
             subject,
             text,
