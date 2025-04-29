@@ -31,6 +31,15 @@ const AdminPanel: React.FC = () => {
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState<string | null>(null);
 
+    // New admin form state
+    const [newAdminEmail, setNewAdminEmail] = useState('');
+    const [addingAdmin, setAddingAdmin] = useState(false);
+    const [adminError, setAdminError] = useState<string | null>(null);
+
+    // Admin removal state
+    const [adminToRemove, setAdminToRemove] = useState<string | null>(null);
+    const [removingAdmin, setRemovingAdmin] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
@@ -88,6 +97,52 @@ const AdminPanel: React.FC = () => {
             setCreateError('Failed to create item.');
         } finally {
             setCreating(false);
+        }
+    };
+
+    // Handle adding a new admin
+    const handleAddAdmin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newAdminEmail) {
+            setAdminError('Email is required.');
+            return;
+        }
+        if (!newAdminEmail.endsWith('@crescentschool.org')) {
+            setAdminError('Email must be from the crescentschool.org domain.');
+            return;
+        }
+        
+        setAddingAdmin(true);
+        setAdminError(null);
+
+        try {
+            const res = await api.post('/admin/admins', { email: newAdminEmail });
+            setAdmins(res.data.admins);
+            setNewAdminEmail('');
+        } catch (err) {
+            console.error(err);
+            setAdminError('Failed to add admin.');
+        } finally {
+            setAddingAdmin(false);
+        }
+    };
+
+    // Handle removing an admin
+    const handleRemoveAdmin = async () => {
+        if (!adminToRemove) return;
+        
+        setRemovingAdmin(true);
+        try {
+            const res = await api.delete('/admin/admins', { 
+                data: { email: adminToRemove } 
+            });
+            setAdmins(res.data.admins);
+            setAdminToRemove(null); // Close the confirmation modal
+        } catch (err) {
+            console.error(err);
+            setAdminError('Failed to remove admin.');
+        } finally {
+            setRemovingAdmin(false);
         }
     };
 
@@ -267,8 +322,139 @@ const AdminPanel: React.FC = () => {
             {/* Admins Section */}
             <section>
                 <h2>Admins ({admins.length})</h2>
-                <pre>{JSON.stringify(admins, null, 2)}</pre>
+                
+                <div className="row mb-4">
+                    <div className="col-md-6">
+                        <div className="card">
+                            <div className="card-header">
+                                Current Administrators
+                            </div>
+                            <div className="card-body">
+                                {admins.length > 0 ? (
+                                    <div className="table-responsive">
+                                        <table className="table table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {admins.map(email => {
+                                                    // Extract name from email (part before @)
+                                                    const name = email.split('@')[0];
+                                                    const formattedName = name.replace(/\./g, ' ')
+                                                        .split(' ')
+                                                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                                        .join(' ');
+                                                    
+                                                    return (
+                                                        <tr key={email}>
+                                                            <td>{formattedName}</td>
+                                                            <td>{email}</td>
+                                                            <td>
+                                                                <button 
+                                                                    className="btn btn-sm btn-outline-danger"
+                                                                    onClick={() => setAdminToRemove(email)}
+                                                                >
+                                                                    Remove
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : (
+                                    <p className="text-muted">No administrators configured.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="col-md-6">
+                        <div className="card">
+                            <div className="card-header">
+                                Add New Administrator
+                            </div>
+                            <div className="card-body">
+                                <form onSubmit={handleAddAdmin}>
+                                    <div className="mb-3">
+                                        <label htmlFor="newAdminEmail" className="form-label">Email Address</label>
+                                        <input
+                                            type="email"
+                                            className="form-control"
+                                            id="newAdminEmail"
+                                            value={newAdminEmail}
+                                            onChange={e => setNewAdminEmail(e.target.value)}
+                                            placeholder="user@crescentschool.org"
+                                            required
+                                        />
+                                        <div className="form-text">
+                                            Must be a crescentschool.org email address.
+                                        </div>
+                                    </div>
+                                    
+                                    <button 
+                                        type="submit" 
+                                        className="btn btn-primary" 
+                                        disabled={addingAdmin}
+                                    >
+                                        {addingAdmin ? 'Adding...' : 'Add Admin'}
+                                    </button>
+                                    
+                                    {adminError && (
+                                        <div className="alert alert-danger mt-3">
+                                            {adminError}
+                                        </div>
+                                    )}
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
+
+            {/* Admin Removal Confirmation Modal */}
+            {adminToRemove && (
+                <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title">Confirm Administrator Removal</h5>
+                                <button 
+                                    type="button" 
+                                    className="btn-close" 
+                                    onClick={() => setAdminToRemove(null)}
+                                ></button>
+                            </div>
+                            <div className="modal-body">
+                                <p>Are you sure you want to remove <strong>{adminToRemove}</strong> as an administrator?</p>
+                                <p className="text-danger">This action cannot be undone. The user will lose all administrative privileges.</p>
+                            </div>
+                            <div className="modal-footer">
+                                <button 
+                                    type="button" 
+                                    className="btn btn-secondary" 
+                                    onClick={() => setAdminToRemove(null)}
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="button" 
+                                    className="btn btn-danger" 
+                                    onClick={handleRemoveAdmin}
+                                    disabled={removingAdmin}
+                                >
+                                    {removingAdmin ? 'Removing...' : 'Remove Administrator'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
