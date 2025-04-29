@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
 import path from 'path';
@@ -25,6 +25,42 @@ const upload = multer({ storage, limits: { fileSize: 8 * 1024 * 1024 } });
 // Protect all admin routes
 router.use(ensureAuth, ensureAdmin);
 
+// Typed delete handler
+const handleDeleteItem: RequestHandler = async (req, res, next) => {
+    const id = Number(req.params.id);
+    console.log(`🗑️  Deleting item with ID: ${id}`);
+
+    try {
+        const item = await prisma.item.findUnique({ where: { id } });
+        if (!item) {
+            console.log(`⚠️  Item ${id} not found`);
+            res.status(404).json({ error: 'Item not found' });
+            return;  // <- early return with no value
+        }
+
+        if (item.imagePath) {
+            const filename = path.basename(item.imagePath);
+            const fullPath = path.join(uploadDir, filename);
+            try {
+                await fs.promises.unlink(fullPath);
+                console.log(`✅ Deleted image file: ${fullPath}`);
+            } catch (fileErr) {
+                console.warn(`⚠️  Could not delete image file ${fullPath}`, fileErr);
+            }
+        }
+
+        await prisma.item.delete({ where: { id } });
+        console.log(`✅ Deleted item record ${id} from database`);
+        res.sendStatus(204);
+        return;  // <- also ends the function with no return value
+    } catch (err) {
+        console.error('❌ Failed to delete item:', err);
+        res.status(500).json({ error: 'Failed to delete item' });
+        return;  // <- end with no returned value
+    }
+};
+
+
 // GET /admin/items - list all items
 router.get('/items', async (_req: Request, res: Response) => {
     const items = await prisma.item.findMany();
@@ -43,22 +79,9 @@ router.post('/items', upload.single('image'), async (req: Request, res: Response
     }
 });
 
-// DELETE /admin/items/:id - delete an item
-router.delete('/items/:id', async (req: Request, res: Response) => {
-    const id = Number(req.params.id);
-    try {
-        // Find item to remove image file
-        const item = await prisma.item.findUnique({ where: { id } });
-        if (item?.imagePath) {
-            const imgFile = path.resolve(__dirname, '../../', item.imagePath);
-            if (fs.existsSync(imgFile)) fs.unlinkSync(imgFile);
-        }
-        await prisma.item.delete({ where: { id } });
-        res.sendStatus(204);
-    } catch (err) {
-        res.status(500).json({ error: 'Failed to delete item' });
-    }
-});
+// DELETE /admin/items/:id
+router.delete('/items/:id', handleDeleteItem);
+
 
 // GET /admin/borrows - list all borrow records
 router.get('/borrows', async (_req: Request, res: Response) => {

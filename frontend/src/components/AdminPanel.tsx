@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import api from '../services/api';
 
 interface Item {
@@ -29,6 +29,8 @@ const AdminPanel: React.FC = () => {
     const [newImage, setNewImage] = useState<File | null>(null);
     const [creating, setCreating] = useState(false);
     const [createError, setCreateError] = useState<string | null>(null);
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -77,6 +79,9 @@ const AdminPanel: React.FC = () => {
             setNewName('');
             setNewDesc('');
             setNewImage(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         } catch (err) {
             console.error(err);
             setCreateError('Failed to create item.');
@@ -121,12 +126,27 @@ const AdminPanel: React.FC = () => {
                         </div>
                         <div className="col-md-3">
                             <label className="form-label">Image (optional)</label>
-                            <input
-                                type="file"
-                                className="form-control"
-                                accept="image/*"
-                                onChange={e => setNewImage(e.target.files?.[0] ?? null)}
-                            />
+                            <div className="input-group">
+                                <input
+                                    type="file"
+                                    className="form-control"
+                                    accept="image/*"
+                                    ref={fileInputRef}
+                                    onChange={e => setNewImage(e.target.files?.[0] ?? null)}
+                                />
+                                {newImage && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => {
+                                            setNewImage(null);
+                                            if (fileInputRef.current) fileInputRef.current.value = '';
+                                        }}
+                                    >
+                                        ❌
+                                    </button>
+                                )}
+                            </div>
                         </div>
                         <div className="col-md-2">
                             <button type="submit" className="btn btn-primary w-100" disabled={creating}>
