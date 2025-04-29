@@ -4,9 +4,7 @@ import path from 'path';
 const ADMIN_FILE = path.resolve(__dirname, '../../admin-emails.json');
 const DEFAULT_ADMINS = [
     'hsinger@crescentschool.org',
-    'CMcGregor@crescentschool.org',
-    'deceasedwolf@gmail.com',
-    'mathisluo@crescentschool.org'
+    'CMcGregor@crescentschool.org'
 ];
 
 // Ensure the admin file exists; if not, initialize with defaults

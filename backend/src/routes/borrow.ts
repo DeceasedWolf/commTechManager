@@ -51,7 +51,7 @@ router.get('/my', async (req: Request, res: Response) => {
 /**
  * POST /borrow
  * Borrow an item until a due date
- * Body: { itemId: number, dueDate: string (YYYY-MM-DD) }
+ * Body: { itemId: number, dueDate: string (DD/MM/YYYY) }
  */
 router.post('/', (async (req: Request, res: Response) => {
     const user = req.user as any;
@@ -70,7 +70,36 @@ router.post('/', (async (req: Request, res: Response) => {
             return res.status(409).json({ error: 'Item is already borrowed' });
         }
 
-        const due = new Date(dueDate);
+        // Parse DD/MM/YYYY format
+        const [day, month, year] = dueDate.split('/').map(Number);
+        const due = new Date(year, month - 1, day); // month is 0-indexed in JS Date
+        
+        // Validate date is valid
+        if (isNaN(due.getTime())) {
+            return res.status(400).json({ error: 'Invalid date format. Please use DD/MM/YYYY.' });
+        }
+        
+        // Get today and tomorrow dates for comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        // Get one year from today
+        const oneYearFromToday = new Date(today);
+        oneYearFromToday.setFullYear(oneYearFromToday.getFullYear() + 1);
+        
+        // Validate that due date is at least tomorrow
+        if (due < tomorrow) {
+            return res.status(400).json({ error: 'Due date must be at least tomorrow.' });
+        }
+        
+        // Validate that due date is not more than one year in the future
+        if (due > oneYearFromToday) {
+            return res.status(400).json({ error: 'Due date cannot be more than one year in the future.' });
+        }
+        
         // set time to 23:59:59
         due.setHours(23, 59, 59, 999);
 
@@ -122,3 +151,4 @@ router.post('/return/:id', (async (req: Request, res: Response) => {
 }) as unknown as RequestHandler);
 
 export default router;
+

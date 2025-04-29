@@ -31,13 +31,38 @@ const handleDeleteItem: RequestHandler = async (req, res, next) => {
     console.log(`🗑️  Deleting item with ID: ${id}`);
 
     try {
-        const item = await prisma.item.findUnique({ where: { id } });
+        // First check if the item exists
+        const item = await prisma.item.findUnique({ 
+            where: { id },
+            include: {
+                borrows: {
+                    where: { returned: false }
+                }
+            }
+        });
+
         if (!item) {
             console.log(`⚠️  Item ${id} not found`);
             res.status(404).json({ error: 'Item not found' });
-            return;  // <- early return with no value
+            return;
         }
 
+        // Check if there are any active borrows
+        if (item.borrows && item.borrows.length > 0) {
+            console.log(`⚠️  Item ${id} has active borrows and cannot be deleted`);
+            res.status(409).json({ 
+                error: 'Cannot delete item that is currently borrowed' 
+            });
+            return;
+        }
+
+        // Delete associated borrow records first (even returned ones)
+        await prisma.borrow.deleteMany({
+            where: { itemId: id }
+        });
+        console.log(`✅ Deleted borrow records for item ${id}`);
+
+        // Then delete the image file if it exists
         if (item.imagePath) {
             const filename = path.basename(item.imagePath);
             const fullPath = path.join(uploadDir, filename);
@@ -49,14 +74,15 @@ const handleDeleteItem: RequestHandler = async (req, res, next) => {
             }
         }
 
+        // Finally delete the item
         await prisma.item.delete({ where: { id } });
         console.log(`✅ Deleted item record ${id} from database`);
         res.sendStatus(204);
-        return;  // <- also ends the function with no return value
+        return;
     } catch (err) {
         console.error('❌ Failed to delete item:', err);
         res.status(500).json({ error: 'Failed to delete item' });
-        return;  // <- end with no returned value
+        return;
     }
 };
 
