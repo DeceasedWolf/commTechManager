@@ -3,6 +3,8 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { PrismaClient, User } from '@prisma/client';
 import { getAdminList } from '../utils/adminList';
 
+type UserWithAdmin = User & { isAdmin: boolean };
+
 const prisma = new PrismaClient();
 
 // Serialize user ID into the session
@@ -10,11 +12,17 @@ passport.serializeUser((user: any, done) => {
     done(null, user.id);
 });
 
-// Deserialize user by ID from the session
+// Deserialize user by ID from the session and restore isAdmin flag
 passport.deserializeUser(async (id: number, done) => {
     try {
         const user = await prisma.user.findUnique({ where: { id } });
-        done(null, user);
+        if (!user) {
+            return done(new Error('User not found'), null);
+        }
+        const adminEmails = getAdminList();
+        const isAdmin = adminEmails.includes(user.email);
+        const userWithFlag: UserWithAdmin = { ...user, isAdmin };
+        done(null, userWithFlag);
     } catch (err) {
         done(err as Error, null);
     }
@@ -26,7 +34,7 @@ passport.use(
         {
             clientID: process.env.GOOGLE_CLIENT_ID!,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-            callbackURL: '/auth/google/callback',
+            callbackURL: process.env.GOOGLE_CALLBACK_URL!,
         },
         async (accessToken, refreshToken, profile, done) => {
             try {
@@ -42,12 +50,11 @@ passport.use(
                     create: { email, googleId: profile.id, name: profile.displayName },
                 });
 
-                // Dynamically load admin emails each login
+                // Load admin list dynamically
                 const adminEmails = getAdminList();
                 const isAdmin = adminEmails.includes(email);
+                const userWithFlag: UserWithAdmin = { ...user, isAdmin };
 
-                // Attach isAdmin flag to user object
-                const userWithFlag = { ...user, isAdmin };
                 return done(null, userWithFlag);
             } catch (err) {
                 return done(err as Error);

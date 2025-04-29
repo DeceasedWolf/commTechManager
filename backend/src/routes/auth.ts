@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import passport from 'passport';
 
 const router = Router();
+const FRONTEND_URL = process.env.CLIENT_URL!;
 
 // Initiate Google OAuth flow
 router.get(
@@ -9,17 +10,25 @@ router.get(
     passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
+router.get('/me', (req, res) => {
+    if (req.isAuthenticated()) {
+        res.json(req.user);
+    } else {
+        res.status(401).json({ error: 'Not authenticated' });
+    }
+});
+
 // OAuth callback endpoint
 router.get(
     '/google/callback',
     passport.authenticate('google', { failureRedirect: '/auth/failure' }),
-    (req: Request, res: Response) => {
-        // Redirect based on admin flag
+    (req, res) => {
         const user: any = req.user;
+        // redirect to frontend, not backend
         if (user?.isAdmin) {
-            return res.redirect('/admin');
+            return res.redirect(`${FRONTEND_URL}/admin`);
         }
-        return res.redirect('/borrow');
+        return res.redirect(`${FRONTEND_URL}/borrow`);
     }
 );
 
