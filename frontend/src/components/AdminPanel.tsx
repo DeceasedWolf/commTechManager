@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import api from '../services/api';
 
 interface Item {
@@ -71,7 +71,7 @@ const AdminPanel: React.FC = () => {
             if (newImage) form.append('image', newImage);
 
             const res = await api.post<Item>('/admin/items', form, {
-                headers: { 'Content-Type': 'multipart/form-data' },
+                headers: {'Content-Type': 'multipart/form-data'},
             });
 
             // Update state with the new item
@@ -91,7 +91,7 @@ const AdminPanel: React.FC = () => {
     };
 
     if (loading) return <div>Loading admin data…</div>;
-    if (error) return <div style={{ color: 'red' }}>{error}</div>;
+    if (error) return <div style={{color: 'red'}}>{error}</div>;
 
     return (
         <div className="container my-4">
@@ -159,32 +159,53 @@ const AdminPanel: React.FC = () => {
 
                 {/* Items Grid */}
                 <div className="row">
-                    {items.map(item => (
-                        <div className="col-md-4 mb-3" key={item.id}>
-                            <div className="card h-100">
-                                {item.imagePath && (
-                                    <img
-                                        src={`http://localhost:8080${item.imagePath}`}
-                                        className="card-img-top"
-                                        alt={item.name}
-                                    />
-                                )}
-                                <div className="card-body">
-                                    <h5 className="card-title">{item.name}</h5>
-                                    <p className="card-text">{item.description}</p>
-                                    <button
-                                        className="btn btn-danger"
-                                        onClick={async () => {
-                                            await api.delete(`/admin/items/${item.id}`);
-                                            setItems(items.filter(i => i.id !== item.id));
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
+                    {(() => {
+                        // Build set of borrowed item IDs
+                        const borrowedIds = new Set(borrows.map(b => b.item.id));
+
+                        return items.map(item => {
+                            const isBorrowed = borrowedIds.has(item.id);
+
+                            return (
+                                <div className="col-md-4 mb-3" key={item.id}>
+                                    <div className={`card h-100 position-relative ${isBorrowed ? 'bg-light border-warning border-5' : ''}`}>
+                                    {/* Borrowed badge */}
+                                        {isBorrowed && (
+                                            <span
+                                                className="badge bg-warning text-dark position-absolute top-0 end-0 m-2">
+                                                Borrowed
+                                            </span>
+                                        )}
+
+                                        {item.imagePath && (
+                                            <img
+                                                src={`http://localhost:8080${item.imagePath}`}
+                                                className="card-img-top"
+                                                alt={item.name}
+                                            />
+                                        )}
+                                        <div className="card-body">
+                                            <h5 className="card-title">{item.name}</h5>
+                                            <p className="card-text">{item.description}</p>
+
+                                            {/* Only allow delete when not borrowed */}
+                                            {!isBorrowed && (
+                                                <button
+                                                    className="btn btn-danger"
+                                                    onClick={async () => {
+                                                        await api.delete(`/admin/items/${item.id}`);
+                                                        setItems(items.filter(i => i.id !== item.id));
+                                                    }}
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    ))}
+                            );
+                        });
+                    })()}
                 </div>
             </section>
 
