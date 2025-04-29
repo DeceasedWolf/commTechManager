@@ -57,8 +57,8 @@ const AdminPanel: React.FC = () => {
     // Handle creating a new item
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newName || !newDesc) {
-            setCreateError('Name and description are required.');
+        if (!newName) {
+            setCreateError('Name is required.');
             return;
         }
         setCreating(true);
@@ -67,7 +67,7 @@ const AdminPanel: React.FC = () => {
         try {
             const form = new FormData();
             form.append('name', newName);
-            form.append('description', newDesc);
+            if (newDesc) form.append('description', newDesc);
             if (newImage) form.append('image', newImage);
 
             const res = await api.post<Item>('/admin/items', form, {
@@ -115,13 +115,12 @@ const AdminPanel: React.FC = () => {
                             />
                         </div>
                         <div className="col-md-4">
-                            <label className="form-label">Description</label>
+                            <label className="form-label">Description (optional)</label>
                             <input
                                 type="text"
                                 className="form-control"
                                 value={newDesc}
                                 onChange={e => setNewDesc(e.target.value)}
-                                required
                             />
                         </div>
                         <div className="col-md-3">
