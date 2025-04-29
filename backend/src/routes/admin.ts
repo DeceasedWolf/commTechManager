@@ -87,7 +87,11 @@ router.delete('/items/:id', handleDeleteItem);
 router.get('/borrows', async (_req: Request, res: Response) => {
     const borrows = await prisma.borrow.findMany({
         where: { returned: false },
-        include: { user: true, item: true },
+        include: {
+            user: true,
+            item: true
+        },
+        orderBy: { id: 'desc' }
     });
     res.json(borrows);
 });
@@ -121,3 +125,4 @@ router.delete('/admins', async (req: Request, res: Response) => {
 });
 
 export default router;
+

@@ -14,6 +14,7 @@ interface BorrowRecord {
     item: { id: number; name: string; description: string; imagePath?: string | null };
     dueDate: string;
     returned: boolean;
+    borrowedAt: string;
 }
 
 const AdminPanel: React.FC = () => {
@@ -211,7 +212,56 @@ const AdminPanel: React.FC = () => {
             {/* Borrows Section */}
             <section className="mb-5">
                 <h2>Current Borrows ({borrows.length})</h2>
-                <pre>{JSON.stringify(borrows, null, 2)}</pre>
+
+                {borrows.length > 0 ? (
+                    <div className="table-responsive">
+                        <table className="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Borrower</th>
+                                    <th>Email</th>
+                                    <th>Borrowed On (DD/MM/YYYY)</th>
+                                    <th>Due Date (DD/MM/YYYY)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {borrows.map(borrow => {
+                                    // Format dates with error handling
+                                    const dueDate = new Date(borrow.dueDate).toLocaleDateString();
+                                    
+                                    // Handle potential missing or invalid borrowedAt date
+                                    let borrowDate = "Unknown";
+                                    try {
+                                        if (borrow.borrowedAt) {
+                                            const date = new Date(borrow.borrowedAt);
+                                            if (!isNaN(date.getTime())) {
+                                                borrowDate = date.toLocaleDateString();
+                                            }
+                                        }
+                                    } catch (err) {
+                                        console.error("Error formatting borrow date:", err);
+                                    }
+
+                                    // Use name if available, otherwise use email
+                                    const borrowerName = borrow.user.name || borrow.user.email.split('@')[0];
+
+                                    return (
+                                        <tr key={borrow.id}>
+                                            <td>{borrow.item.name}</td>
+                                            <td>{borrowerName}</td>
+                                            <td>{borrow.user.email}</td>
+                                            <td>{borrowDate}</td>
+                                            <td>{dueDate}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <p className="text-muted">No active borrows at this time.</p>
+                )}
             </section>
 
             {/* Admins Section */}
@@ -224,3 +274,4 @@ const AdminPanel: React.FC = () => {
 };
 
 export default AdminPanel;
+
