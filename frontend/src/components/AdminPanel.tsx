@@ -211,7 +211,7 @@ const AdminPanel: React.FC = () => {
                                             if (fileInputRef.current) fileInputRef.current.value = '';
                                         }}
                                     >
-                                        ❌
+                                        X
                                     </button>
                                 )}
                             </div>

@@ -138,76 +138,90 @@ const BorrowPanel: React.FC = () => {
 
     return (
         <Tab.Container activeKey={activeKey} onSelect={(k) => k && setActiveKey(k)}>
-            <Row>
-                <Col sm={3}>
-                    <Nav variant="pills" className="flex-column">
-                        <Nav.Item><Nav.Link eventKey="available">Available</Nav.Link></Nav.Item>
-                        <Nav.Item><Nav.Link eventKey="borrowed">Borrowed</Nav.Link></Nav.Item>
-                    </Nav>
-                </Col>
-                <Col sm={9}>
-                    {isLoading && <div className="alert alert-info">Processing your request...</div>}
-                    {error && <div className="alert alert-danger">{error}</div>}
-                    
-                    <Tab.Content>
-                        <Tab.Pane eventKey="available">
-                            <div className="mb-3">
-                                <label htmlFor="dueDate" className="form-label">Return By</label>
-                                <input 
-                                    type="text" 
-                                    className="form-control" 
-                                    id="dueDate" 
-                                    value={dueDate} 
-                                    onChange={e => setDueDate(e.target.value)}
-                                    placeholder="DD/MM/YYYY"
-                                    required
-                                />
-                                <div className="form-text">
-                                    Enter the date you will return this item (format: DD/MM/YYYY).
-                                    Must be at least tomorrow and within one year.
-                                </div>
-                            </div>
-                            
-                            <div className="d-flex flex-wrap">
-                                {available.length > 0 ? (
-                                    available.map(item => (
-                                        <ItemCard
-                                            key={item.id}
-                                            {...item}
-                                            onAction={handleBorrow}
-                                            actionLabel="Borrow"
-                                            disabled={isLoading}
-                                        />
-                                    ))
-                                ) : (
-                                    <p className="text-muted">No items available for borrowing right now.</p>
-                                )}
-                            </div>
-                        </Tab.Pane>
+            <div className="container my-3">
+                {/* Horizontal Navigation - Each button takes half width */}
+                <Row className="mb-4">
+                    <Col xs={12}>
+                        <Nav variant="pills" className="w-100">
+                            <Nav.Item className="w-50">
+                                <Nav.Link eventKey="available" className="text-center">Available</Nav.Link>
+                            </Nav.Item>
+                            <Nav.Item className="w-50">
+                                <Nav.Link eventKey="borrowed" className="text-center">Borrowed</Nav.Link>
+                            </Nav.Item>
+                        </Nav>
+                    </Col>
+                </Row>
+                
+                {/* Content Section */}
+                <Row>
+                    <Col xs={12}>
+                        {isLoading && <div className="alert alert-info">Processing your request...</div>}
+                        {error && <div className="alert alert-danger">{error}</div>}
                         
-                        <Tab.Pane eventKey="borrowed">
-                            <div className="d-flex flex-wrap">
-                                {borrowed.length > 0 ? (
-                                    borrowed.map(br => (
-                                        <ItemCard
-                                            key={br.id}
-                                            id={br.id}
-                                            name={br.item.name}
-                                            description={`Due: ${formatDate(br.dueDate)}`}
-                                            imagePath={br.item.imagePath}
-                                            onAction={() => handleReturn(br.id)}
-                                            actionLabel="Return"
-                                            disabled={isLoading}
-                                        />
-                                    ))
-                                ) : (
-                                    <p className="text-muted">You haven't borrowed any items yet.</p>
-                                )}
-                            </div>
-                        </Tab.Pane>
-                    </Tab.Content>
-                </Col>
-            </Row>
+                        <Tab.Content>
+                            <Tab.Pane eventKey="available">
+                                <div className="mb-3">
+                                    <label htmlFor="dueDate" className="form-label">Return By</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-control" 
+                                        id="dueDate" 
+                                        value={dueDate} 
+                                        onChange={e => setDueDate(e.target.value)}
+                                        placeholder="DD/MM/YYYY"
+                                        required
+                                    />
+                                    <div className="form-text">
+                                        Enter the date you will return this item (format: DD/MM/YYYY).
+                                        Must be at least tomorrow and within one year.
+                                    </div>
+                                </div>
+                                
+                                <div className="d-flex flex-wrap">
+                                    {available.length > 0 ? (
+                                        available.map(item => (
+                                            <ItemCard
+                                                key={item.id}
+                                                {...item}
+                                                onAction={handleBorrow}
+                                                actionLabel="Borrow"
+                                                disabled={isLoading}
+                                            />
+                                        ))
+                                    ) : (
+                                        <p className="text-muted">No items available for borrowing right now.</p>
+                                    )}
+                                </div>
+                            </Tab.Pane>
+                            
+                            <Tab.Pane eventKey="borrowed">
+                                <div className="d-flex flex-wrap">
+                                    {borrowed.length > 0 ? (
+                                        // Sort borrowed items by due date (earliest first) before rendering
+                                        [...borrowed]
+                                            .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+                                            .map(br => (
+                                                <ItemCard
+                                                    key={br.id}
+                                                    id={br.id}
+                                                    name={br.item.name}
+                                                    description={`Due: ${formatDate(br.dueDate)}`}
+                                                    imagePath={br.item.imagePath}
+                                                    onAction={() => handleReturn(br.id)}
+                                                    actionLabel="Return"
+                                                    disabled={isLoading}
+                                                />
+                                            ))
+                                    ) : (
+                                        <p className="text-muted">You haven't borrowed any items yet.</p>
+                                    )}
+                                </div>
+                            </Tab.Pane>
+                        </Tab.Content>
+                    </Col>
+                </Row>
+            </div>
         </Tab.Container>
     );
 };

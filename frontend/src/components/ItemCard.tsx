@@ -7,30 +7,41 @@ export interface Props {
     imagePath?: string;
     onAction: (id: number) => void;
     actionLabel: string;
-    disabled?: boolean; // Add disabled prop
+    disabled?: boolean;
 }
 
 const ItemCard: React.FC<Props> = ({ id, name, description, imagePath, onAction, actionLabel, disabled = false }) => {
     return (
-        <div className="card m-2" style={{ width: '18rem' }}>
-            {imagePath && (
-                <img
-                    src={`http://localhost:8080${imagePath}`}
-                    className="card-img-top"
-                    alt={name}
-                    style={{ height: '200px', objectFit: 'cover' }}
-                />
-            )}
-            <div className="card-body">
-                <h5 className="card-title">{name}</h5>
-                {description && <p className="card-text">{description}</p>}
-                <button
-                    className="btn btn-primary"
-                    onClick={() => onAction(id)}
-                    disabled={disabled} // Use the disabled prop
-                >
-                    {actionLabel}
-                </button>
+        <div className="card m-2" style={{ width: '18rem', display: 'flex', flexDirection: 'column', height: '400px' }}>
+            {/* Image container with fixed height */}
+            <div style={{ height: '200px', overflow: 'hidden' }}>
+                {imagePath ? (
+                    <img
+                        src={`http://localhost:8080${imagePath}`}
+                        className="card-img-top"
+                        alt={name}
+                        style={{ height: '100%', width: '100%', objectFit: 'cover' }}
+                    />
+                ) : (
+                    <div className="bg-light" style={{ height: '100%', width: '100%' }}></div>
+                )}
+            </div>
+            
+            {/* Content area that pushes to the bottom with flex */}
+            <div className="card-body d-flex flex-column" style={{ flex: 1 }}>
+                <div style={{ flex: 1 }}>
+                    <h5 className="card-title">{name}</h5>
+                    {description && <p className="card-text">{description}</p>}
+                </div>
+                <div className="mt-auto">
+                    <button
+                        className="btn btn-primary w-100"
+                        onClick={() => onAction(id)}
+                        disabled={disabled}
+                    >
+                        {actionLabel}
+                    </button>
+                </div>
             </div>
         </div>
     );
