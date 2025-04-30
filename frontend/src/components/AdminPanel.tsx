@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import api from '../services/api';
+import { Nav, Tab, Row, Col } from 'react-bootstrap';
 
 interface Item {
     id: number;
@@ -36,6 +37,7 @@ const AdminPanel: React.FC = () => {
     const [admins, setAdmins] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [activeKey, setActiveKey] = useState<string>("items");
 
     // New item form state
     const [newName, setNewName] = useState('');
@@ -163,286 +165,313 @@ const AdminPanel: React.FC = () => {
     if (error) return <div style={{color: 'red'}}>{error}</div>;
 
     return (
-        <div className="container my-4">
-            <h1>Admin Panel</h1>
+        <Tab.Container activeKey={activeKey} onSelect={(k) => k && setActiveKey(k)}>
+            <div className="container my-4">
+                <h1>Admin Panel</h1>
 
-            {/* Items Section */}
-            <section className="mb-5">
-                <h2>Items ({items.length})</h2>
+                {/* Tab Navigation */}
+                <Row className="mb-4">
+                    <Col xs={12}>
+                        <Nav variant="pills" className="nav-fill w-100">
+                            <Nav.Item className="flex-grow-1">
+                                <Nav.Link eventKey="items" className="text-center">Items ({items.length})</Nav.Link>
+                            </Nav.Item>
+                            <Nav.Item className="flex-grow-1">
+                                <Nav.Link eventKey="borrows" className="text-center">Borrows ({borrows.length})</Nav.Link>
+                            </Nav.Item>
+                            <Nav.Item className="flex-grow-1">
+                                <Nav.Link eventKey="admins" className="text-center">Admins ({admins.length})</Nav.Link>
+                            </Nav.Item>
+                        </Nav>
+                    </Col>
+                </Row>
+                
+                {/* Tab Content */}
+                <Tab.Content>
+                    {/* Items Tab */}
+                    <Tab.Pane eventKey="items">
+                        <section>
+                            <h2>Items ({items.length})</h2>
 
-                {/* Add Item Form */}
-                <form onSubmit={handleCreate} className="mb-4">
-                    <div className="row g-2 align-items-end">
-                        <div className="col-md-3">
-                            <label className="form-label">Name</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={newName}
-                                onChange={e => setNewName(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="col-md-4">
-                            <label className="form-label">Description (optional)</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={newDesc}
-                                onChange={e => setNewDesc(e.target.value)}
-                            />
-                        </div>
-                        <div className="col-md-3">
-                            <label className="form-label">Image (optional)</label>
-                            <div className="input-group">
-                                <input
-                                    type="file"
-                                    className="form-control"
-                                    accept="image/*"
-                                    ref={fileInputRef}
-                                    onChange={e => setNewImage(e.target.files?.[0] ?? null)}
-                                />
-                                {newImage && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-outline-secondary"
-                                        onClick={() => {
-                                            setNewImage(null);
-                                            if (fileInputRef.current) fileInputRef.current.value = '';
-                                        }}
-                                    >
-                                        X
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                        <div className="col-md-2">
-                            <button type="submit" className="btn btn-primary w-100" disabled={creating}>
-                                {creating ? 'Adding…' : 'Add Item'}
-                            </button>
-                        </div>
-                    </div>
-                    {createError && <div className="text-danger mt-2">{createError}</div>}
-                </form>
-
-                {/* Items Grid */}
-                <div className="row">
-                    {(() => {
-                        // Build set of borrowed item IDs
-                        const borrowedIds = new Set(borrows.map(b => b.item.id));
-
-                        return items.map(item => {
-                            const isBorrowed = borrowedIds.has(item.id);
-
-                            return (
-                                <div className="col-md-4 mb-3" key={item.id}>
-                                    <div className={`card h-100 position-relative ${isBorrowed ? 'bg-light border-warning border-5' : ''}`}>
-                                    {/* Borrowed badge */}
-                                        {isBorrowed && (
-                                            <span
-                                                className="badge bg-warning text-dark position-absolute top-0 end-0 m-2">
-                                                Borrowed
-                                            </span>
-                                        )}
-
-                                        {item.imagePath && (
-                                            <img
-                                                src={`http://localhost:8080${item.imagePath}`}
-                                                className="card-img-top"
-                                                alt={item.name}
+                            {/* Add Item Form */}
+                            <form onSubmit={handleCreate} className="mb-4">
+                                <div className="row g-2 align-items-end">
+                                    <div className="col-md-3">
+                                        <label className="form-label">Name</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            value={newName}
+                                            onChange={e => setNewName(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="col-md-4">
+                                        <label className="form-label">Description (optional)</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            value={newDesc}
+                                            onChange={e => setNewDesc(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="col-md-3">
+                                        <label className="form-label">Image (optional)</label>
+                                        <div className="input-group">
+                                            <input
+                                                type="file"
+                                                className="form-control"
+                                                accept="image/*"
+                                                ref={fileInputRef}
+                                                onChange={e => setNewImage(e.target.files?.[0] ?? null)}
                                             />
-                                        )}
-                                        <div className="card-body">
-                                            <h5 className="card-title">{item.name}</h5>
-                                            <p className="card-text">{item.description}</p>
-
-                                            {/* Only allow delete when not borrowed */}
-                                            {!isBorrowed && (
+                                            {newImage && (
                                                 <button
-                                                    className="btn btn-danger"
-                                                    onClick={async () => {
-                                                        await api.delete(`/admin/items/${item.id}`);
-                                                        setItems(items.filter(i => i.id !== item.id));
+                                                    type="button"
+                                                    className="btn btn-outline-secondary"
+                                                    onClick={() => {
+                                                        setNewImage(null);
+                                                        if (fileInputRef.current) fileInputRef.current.value = '';
                                                     }}
                                                 >
-                                                    Delete
+                                                    X
                                                 </button>
                                             )}
                                         </div>
                                     </div>
+                                    <div className="col-md-2">
+                                        <button type="submit" className="btn btn-primary w-100" disabled={creating}>
+                                            {creating ? 'Adding…' : 'Add Item'}
+                                        </button>
+                                    </div>
                                 </div>
-                            );
-                        });
-                    })()}
-                </div>
-            </section>
+                                {createError && <div className="text-danger mt-2">{createError}</div>}
+                            </form>
 
-            {/* Borrows Section */}
-            <section className="mb-5">
-                <h2>Current Borrows ({borrows.length})</h2>
+                            {/* Items Grid */}
+                            <div className="row">
+                                {(() => {
+                                    // Build set of borrowed item IDs
+                                    const borrowedIds = new Set(borrows.map(b => b.item.id));
 
-                {borrows.length > 0 ? (
-                    <div className="table-responsive">
-                        <table className="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Item</th>
-                                    <th>Borrower</th>
-                                    <th>Email</th>
-                                    <th>Borrowed On (DD/MM/YYYY)</th>
-                                    <th>Due Date (DD/MM/YYYY)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {/* Sort borrows by due date (earliest first) before rendering */}
-                                {[...borrows]
-                                    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-                                    .map(borrow => {
-                                        // Format dates with error handling
-                                        const dueDate = new Date(borrow.dueDate).toLocaleDateString();
-                                        
-                                        // Handle potential missing or invalid borrowedAt date
-                                        let borrowDate = "Unknown";
-                                        try {
-                                            if (borrow.borrowedAt) {
-                                                const date = new Date(borrow.borrowedAt);
-                                                if (!isNaN(date.getTime())) {
-                                                    borrowDate = date.toLocaleDateString();
-                                                }
-                                            }
-                                        } catch (err) {
-                                            console.error("Error formatting borrow date:", err);
-                                        }
-
-                                        // Use name if available, otherwise use email
-                                        const borrowerName = borrow.user.name || borrow.user.email.split('@')[0];
-
-                                        // Determine status for highlighting
-                                        const status = getDueDateStatus(borrow.dueDate);
-                                        const rowClass = 
-                                            status === 'overdue' ? 'table-danger border-danger' :
-                                            status === 'dueToday' ? 'table-warning border-warning' : '';
+                                    return items.map(item => {
+                                        const isBorrowed = borrowedIds.has(item.id);
 
                                         return (
-                                            <tr key={borrow.id} className={rowClass}>
-                                                <td>{borrow.item.name}</td>
-                                                <td>{borrowerName}</td>
-                                                <td>{borrow.user.email}</td>
-                                                <td>{borrowDate}</td>
-                                                <td>
-                                                    {status === 'overdue' && <span className="badge bg-danger me-1">Overdue!</span>}
-                                                    {status === 'dueToday' && <span className="badge bg-warning text-dark me-1">Due today!</span>}
-                                                    {dueDate}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                            </tbody>
-                        </table>
-                    </div>
-                ) : (
-                    <p className="text-muted">No active borrows at this time.</p>
-                )}
-            </section>
+                                            <div className="col-md-4 mb-3" key={item.id}>
+                                                <div className={`card h-100 position-relative ${isBorrowed ? 'bg-light border-warning border-5' : ''}`}>
+                                                {/* Borrowed badge */}
+                                                    {isBorrowed && (
+                                                        <span
+                                                            className="badge bg-warning text-dark position-absolute top-0 end-0 m-2">
+                                                            Borrowed
+                                                        </span>
+                                                    )}
 
-            {/* Admins Section */}
-            <section>
-                <h2>Admins ({admins.length})</h2>
-                
-                <div className="row mb-4">
-                    <div className="col-md-6">
-                        <div className="card">
-                            <div className="card-header">
-                                Current Administrators
+                                                    {item.imagePath && (
+                                                        <img
+                                                            src={`http://localhost:8080${item.imagePath}`}
+                                                            className="card-img-top"
+                                                            alt={item.name}
+                                                        />
+                                                    )}
+                                                    <div className="card-body">
+                                                        <h5 className="card-title">{item.name}</h5>
+                                                        <p className="card-text">{item.description}</p>
+
+                                                        {/* Only allow delete when not borrowed */}
+                                                        {!isBorrowed && (
+                                                            <button
+                                                                className="btn btn-danger"
+                                                                onClick={async () => {
+                                                                    await api.delete(`/admin/items/${item.id}`);
+                                                                    setItems(items.filter(i => i.id !== item.id));
+                                                                }}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })()}
                             </div>
-                            <div className="card-body">
-                                {admins.length > 0 ? (
-                                    <div className="table-responsive">
-                                        <table className="table table-striped">
-                                            <thead>
-                                                <tr>
-                                                    <th>Name</th>
-                                                    <th>Email</th>
-                                                    <th>Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {admins.map(email => {
-                                                    // Extract name from email (part before @)
-                                                    const name = email.split('@')[0];
-                                                    const formattedName = name.replace(/\./g, ' ')
-                                                        .split(' ')
-                                                        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                                        .join(' ');
+                        </section>
+                    </Tab.Pane>
+
+                    {/* Borrows Tab */}
+                    <Tab.Pane eventKey="borrows">
+                        <section>
+                            <h2>Current Borrows ({borrows.length})</h2>
+
+                            {borrows.length > 0 ? (
+                                <div className="table-responsive">
+                                    <table className="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Borrower</th>
+                                                <th>Email</th>
+                                                <th>Borrowed On (DD/MM/YYYY)</th>
+                                                <th>Due Date (DD/MM/YYYY)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[...borrows]
+                                                .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+                                                .map(borrow => {
+                                                    // Format dates with error handling
+                                                    const dueDate = new Date(borrow.dueDate).toLocaleDateString();
                                                     
+                                                    // Handle potential missing or invalid borrowedAt date
+                                                    let borrowDate = "Unknown";
+                                                    try {
+                                                        if (borrow.borrowedAt) {
+                                                            const date = new Date(borrow.borrowedAt);
+                                                            if (!isNaN(date.getTime())) {
+                                                                borrowDate = date.toLocaleDateString();
+                                                            }
+                                                        }
+                                                    } catch (err) {
+                                                        console.error("Error formatting borrow date:", err);
+                                                    }
+
+                                                    // Use name if available, otherwise use email
+                                                    const borrowerName = borrow.user.name || borrow.user.email.split('@')[0];
+
+                                                    // Determine status for highlighting
+                                                    const status = getDueDateStatus(borrow.dueDate);
+                                                    const rowClass = 
+                                                        status === 'overdue' ? 'table-danger border-danger' :
+                                                        status === 'dueToday' ? 'table-warning border-warning' : '';
+
                                                     return (
-                                                        <tr key={email}>
-                                                            <td>{formattedName}</td>
-                                                            <td>{email}</td>
+                                                        <tr key={borrow.id} className={rowClass}>
+                                                            <td>{borrow.item.name}</td>
+                                                            <td>{borrowerName}</td>
+                                                            <td>{borrow.user.email}</td>
+                                                            <td>{borrowDate}</td>
                                                             <td>
-                                                                <button 
-                                                                    className="btn btn-sm btn-outline-danger"
-                                                                    onClick={() => setAdminToRemove(email)}
-                                                                >
-                                                                    Remove
-                                                                </button>
+                                                                {status === 'overdue' && <span className="badge bg-danger me-1">Overdue!</span>}
+                                                                {status === 'dueToday' && <span className="badge bg-warning text-dark me-1">Due today!</span>}
+                                                                {dueDate}
                                                             </td>
                                                         </tr>
                                                     );
                                                 })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                ) : (
-                                    <p className="text-muted">No administrators configured.</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="col-md-6">
-                        <div className="card">
-                            <div className="card-header">
-                                Add New Administrator
-                            </div>
-                            <div className="card-body">
-                                <form onSubmit={handleAddAdmin}>
-                                    <div className="mb-3">
-                                        <label htmlFor="newAdminEmail" className="form-label">Email Address</label>
-                                        <input
-                                            type="email"
-                                            className="form-control"
-                                            id="newAdminEmail"
-                                            value={newAdminEmail}
-                                            onChange={e => setNewAdminEmail(e.target.value)}
-                                            placeholder="user@crescentschool.org"
-                                            required
-                                        />
-                                        <div className="form-text">
-                                            Must be a crescentschool.org email address.
-                                        </div>
-                                    </div>
-                                    
-                                    <button 
-                                        type="submit" 
-                                        className="btn btn-primary" 
-                                        disabled={addingAdmin}
-                                    >
-                                        {addingAdmin ? 'Adding...' : 'Add Admin'}
-                                    </button>
-                                    
-                                    {adminError && (
-                                        <div className="alert alert-danger mt-3">
-                                            {adminError}
-                                        </div>
-                                    )}
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <p className="text-muted">No active borrows at this time.</p>
+                            )}
+                        </section>
+                    </Tab.Pane>
 
+                    {/* Admins Tab */}
+                    <Tab.Pane eventKey="admins">
+                        <section>
+                            <h2>Admins Management ({admins.length})</h2>
+                            
+                            <div className="row">
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-header">
+                                            Current Administrators
+                                        </div>
+                                        <div className="card-body">
+                                            {admins.length > 0 ? (
+                                                <div className="table-responsive">
+                                                    <table className="table table-striped">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Name</th>
+                                                                <th>Email</th>
+                                                                <th>Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {admins.map(email => {
+                                                                // Extract name from email (part before @)
+                                                                const name = email.split('@')[0];
+                                                                const formattedName = name.replace(/\./g, ' ')
+                                                                    .split(' ')
+                                                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                                                    .join(' ');
+                                                                
+                                                                return (
+                                                                    <tr key={email}>
+                                                                        <td>{formattedName}</td>
+                                                                        <td>{email}</td>
+                                                                        <td>
+                                                                            <button 
+                                                                                className="btn btn-sm btn-outline-danger"
+                                                                                onClick={() => setAdminToRemove(email)}
+                                                                            >
+                                                                                Remove
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            })}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            ) : (
+                                                <p className="text-muted">No administrators configured.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="col-md-6 mb-4">
+                                    <div className="card">
+                                        <div className="card-header">
+                                            Add New Administrator
+                                        </div>
+                                        <div className="card-body">
+                                            <form onSubmit={handleAddAdmin}>
+                                                <div className="mb-3">
+                                                    <label htmlFor="newAdminEmail" className="form-label">Email Address</label>
+                                                    <input
+                                                        type="email"
+                                                        className="form-control"
+                                                        id="newAdminEmail"
+                                                        value={newAdminEmail}
+                                                        onChange={e => setNewAdminEmail(e.target.value)}
+                                                        placeholder="user@crescentschool.org"
+                                                        required
+                                                    />
+                                                    <div className="form-text">
+                                                        Must be a crescentschool.org email address.
+                                                    </div>
+                                                </div>
+                                                
+                                                <button 
+                                                    type="submit" 
+                                                    className="btn btn-primary" 
+                                                    disabled={addingAdmin}
+                                                >
+                                                    {addingAdmin ? 'Adding...' : 'Add Admin'}
+                                                </button>
+                                                
+                                                {adminError && (
+                                                    <div className="alert alert-danger mt-3">
+                                                        {adminError}
+                                                    </div>
+                                                )}
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </Tab.Pane>
+                </Tab.Content>
+            </div>
+            
             {/* Admin Removal Confirmation Modal */}
             {adminToRemove && (
                 <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -481,7 +510,7 @@ const AdminPanel: React.FC = () => {
                     </div>
                 </div>
             )}
-        </div>
+        </Tab.Container>
     );
 };
 
