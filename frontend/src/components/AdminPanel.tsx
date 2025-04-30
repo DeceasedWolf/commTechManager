@@ -37,7 +37,7 @@ const AdminPanel: React.FC = () => {
     const [admins, setAdmins] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeKey, setActiveKey] = useState<string>("items");
+    const [activeKey, setActiveKey] = useState<string>("borrows");
 
     // New item form state
     const [newName, setNewName] = useState('');
@@ -174,10 +174,10 @@ const AdminPanel: React.FC = () => {
                     <Col xs={12}>
                         <Nav variant="pills" className="nav-fill w-100">
                             <Nav.Item className="flex-grow-1">
-                                <Nav.Link eventKey="items" className="text-center">Items ({items.length})</Nav.Link>
+                                <Nav.Link eventKey="borrows" className="text-center">Borrows ({borrows.length})</Nav.Link>
                             </Nav.Item>
                             <Nav.Item className="flex-grow-1">
-                                <Nav.Link eventKey="borrows" className="text-center">Borrows ({borrows.length})</Nav.Link>
+                                <Nav.Link eventKey="items" className="text-center">Items ({items.length})</Nav.Link>
                             </Nav.Item>
                             <Nav.Item className="flex-grow-1">
                                 <Nav.Link eventKey="admins" className="text-center">Admins ({admins.length})</Nav.Link>
@@ -188,6 +188,75 @@ const AdminPanel: React.FC = () => {
                 
                 {/* Tab Content */}
                 <Tab.Content>
+                    {/* Borrows Tab */}
+                    <Tab.Pane eventKey="borrows">
+                        <section>
+                            <h2>Current Borrows ({borrows.length})</h2>
+
+                            {borrows.length > 0 ? (
+                                <div className="table-responsive">
+                                    <table className="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Item</th>
+                                                <th>Borrower</th>
+                                                <th>Email</th>
+                                                <th>Borrowed On (DD/MM/YYYY)</th>
+                                                <th>Due Date (DD/MM/YYYY)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[...borrows]
+                                                .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+                                                .map(borrow => {
+                                                    // Format dates with error handling
+                                                    const dueDate = new Date(borrow.dueDate).toLocaleDateString();
+                                                    
+                                                    // Handle potential missing or invalid borrowedAt date
+                                                    let borrowDate = "Unknown";
+                                                    try {
+                                                        if (borrow.borrowedAt) {
+                                                            const date = new Date(borrow.borrowedAt);
+                                                            if (!isNaN(date.getTime())) {
+                                                                borrowDate = date.toLocaleDateString();
+                                                            }
+                                                        }
+                                                    } catch (err) {
+                                                        console.error("Error formatting borrow date:", err);
+                                                    }
+
+                                                    // Use name if available, otherwise use email
+                                                    const borrowerName = borrow.user.name || borrow.user.email.split('@')[0];
+
+                                                    // Determine status for highlighting
+                                                    const status = getDueDateStatus(borrow.dueDate);
+                                                    const rowClass = 
+                                                        status === 'overdue' ? 'table-danger border-danger' :
+                                                        status === 'dueToday' ? 'table-warning border-warning' : '';
+
+                                                    return (
+                                                        <tr key={borrow.id} className={rowClass}>
+                                                            <td>{borrow.item.name}</td>
+                                                            <td>{borrowerName}</td>
+                                                            <td>{borrow.user.email}</td>
+                                                            <td>{borrowDate}</td>
+                                                            <td>
+                                                                {status === 'overdue' && <span className="badge bg-danger me-1">Overdue!</span>}
+                                                                {status === 'dueToday' && <span className="badge bg-warning text-dark me-1">Due today!</span>}
+                                                                {dueDate}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <p className="text-muted">No active borrows at this time.</p>
+                            )}
+                        </section>
+                    </Tab.Pane>
+
                     {/* Items Tab */}
                     <Tab.Pane eventKey="items">
                         <section>
@@ -298,75 +367,6 @@ const AdminPanel: React.FC = () => {
                                     });
                                 })()}
                             </div>
-                        </section>
-                    </Tab.Pane>
-
-                    {/* Borrows Tab */}
-                    <Tab.Pane eventKey="borrows">
-                        <section>
-                            <h2>Current Borrows ({borrows.length})</h2>
-
-                            {borrows.length > 0 ? (
-                                <div className="table-responsive">
-                                    <table className="table table-striped table-hover">
-                                        <thead>
-                                            <tr>
-                                                <th>Item</th>
-                                                <th>Borrower</th>
-                                                <th>Email</th>
-                                                <th>Borrowed On (DD/MM/YYYY)</th>
-                                                <th>Due Date (DD/MM/YYYY)</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {[...borrows]
-                                                .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-                                                .map(borrow => {
-                                                    // Format dates with error handling
-                                                    const dueDate = new Date(borrow.dueDate).toLocaleDateString();
-                                                    
-                                                    // Handle potential missing or invalid borrowedAt date
-                                                    let borrowDate = "Unknown";
-                                                    try {
-                                                        if (borrow.borrowedAt) {
-                                                            const date = new Date(borrow.borrowedAt);
-                                                            if (!isNaN(date.getTime())) {
-                                                                borrowDate = date.toLocaleDateString();
-                                                            }
-                                                        }
-                                                    } catch (err) {
-                                                        console.error("Error formatting borrow date:", err);
-                                                    }
-
-                                                    // Use name if available, otherwise use email
-                                                    const borrowerName = borrow.user.name || borrow.user.email.split('@')[0];
-
-                                                    // Determine status for highlighting
-                                                    const status = getDueDateStatus(borrow.dueDate);
-                                                    const rowClass = 
-                                                        status === 'overdue' ? 'table-danger border-danger' :
-                                                        status === 'dueToday' ? 'table-warning border-warning' : '';
-
-                                                    return (
-                                                        <tr key={borrow.id} className={rowClass}>
-                                                            <td>{borrow.item.name}</td>
-                                                            <td>{borrowerName}</td>
-                                                            <td>{borrow.user.email}</td>
-                                                            <td>{borrowDate}</td>
-                                                            <td>
-                                                                {status === 'overdue' && <span className="badge bg-danger me-1">Overdue!</span>}
-                                                                {status === 'dueToday' && <span className="badge bg-warning text-dark me-1">Due today!</span>}
-                                                                {dueDate}
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                <p className="text-muted">No active borrows at this time.</p>
-                            )}
                         </section>
                     </Tab.Pane>
 
