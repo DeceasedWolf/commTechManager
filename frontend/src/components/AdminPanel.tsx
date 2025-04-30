@@ -17,6 +17,19 @@ interface BorrowRecord {
     borrowedAt: string;
 }
 
+// Helper function to check due date status
+const getDueDateStatus = (dueDateStr: string): 'overdue' | 'dueToday' | 'upcoming' => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+    
+    const dueDate = new Date(dueDateStr);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    if (dueDate < today) return 'overdue';
+    if (dueDate.getTime() === today.getTime()) return 'dueToday';
+    return 'upcoming';
+};
+
 const AdminPanel: React.FC = () => {
     const [items, setItems] = useState<Item[]>([]);
     const [borrows, setBorrows] = useState<BorrowRecord[]>([]);
@@ -301,13 +314,23 @@ const AdminPanel: React.FC = () => {
                                     // Use name if available, otherwise use email
                                     const borrowerName = borrow.user.name || borrow.user.email.split('@')[0];
 
+                                    // Determine status for highlighting
+                                    const status = getDueDateStatus(borrow.dueDate);
+                                    const rowClass = 
+                                        status === 'overdue' ? 'table-danger border-danger' :
+                                        status === 'dueToday' ? 'table-warning border-warning' : '';
+
                                     return (
-                                        <tr key={borrow.id}>
+                                        <tr key={borrow.id} className={rowClass}>
                                             <td>{borrow.item.name}</td>
                                             <td>{borrowerName}</td>
                                             <td>{borrow.user.email}</td>
                                             <td>{borrowDate}</td>
-                                            <td>{dueDate}</td>
+                                            <td>
+                                                {status === 'overdue' && <span className="badge bg-danger me-1">Overdue!</span>}
+                                                {status === 'dueToday' && <span className="badge bg-warning text-dark me-1">Due today!</span>}
+                                                {dueDate}
+                                            </td>
                                         </tr>
                                     );
                                 })}
