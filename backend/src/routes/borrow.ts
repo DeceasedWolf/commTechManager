@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { ensureAuth } from '../middlewares/ensureAuth';
-import { sendReturnNotice } from '../services/mailer';
+import { sendReturnNotice, notifyAdminsBorrow } from '../services/mailer';
 import { getAdminList } from '../utils/adminList';
 
 const prisma = new PrismaClient();
@@ -108,8 +108,23 @@ router.post('/', (async (req: Request, res: Response) => {
                 userId: user.id,
                 itemId: Number(itemId),
                 dueDate: due
+            },
+            include: {
+                item: true,
+                user: true
             }
         });
+
+        // Notify admins about the new borrow
+        const admins = getAdminList();
+        await notifyAdminsBorrow(
+            borrow.user.name || borrow.user.email,
+            borrow.user.email,
+            borrow.item.name,
+            borrow.dueDate,
+            admins
+        );
+        
         return res.status(201).json(borrow);
     } catch (err) {
         return res.status(500).json({ error: 'Failed to create borrow record' });

@@ -17,7 +17,7 @@ const transporter = nodemailer.createTransport({
 /**
  * Send a reminder email to the borrower 24h before due and on due date
  * @param to Borrower email address
- * @param name Borrower name
+ * @param name Borrower na
  * @param itemName Name of the item
  * @param dueDate Date object representing due date/time
  */
@@ -76,5 +76,161 @@ Comm Tech Dept. Bot`;
         });
     } catch (err) {
         console.error('Error sending return notice email:', err);
+    }
+}
+
+/**
+ * Send email notification when item is due today
+ * @param to Borrower email address
+ * @param name Borrower name
+ * @param itemName Name of the item
+ * @param dueDate Date object representing due date/time
+ */
+export async function sendDueTodayNotice(
+    to: string,
+    name: string,
+    itemName: string,
+    dueDate: Date
+): Promise<void> {
+    const dueDateStr = dueDate.toLocaleString('en-US', { dateStyle: 'full' });
+    const subject = `'${itemName}' is due TODAY`;
+    const text = `Hello ${name},
+
+This is a reminder that the item '${itemName}' you borrowed is due for return TODAY (${dueDateStr}).
+
+Please return it by 11:59 PM today.
+
+Thank you,
+Comm Tech Dept.`;
+
+    try {
+        await transporter.sendMail({
+            from: process.env.FROM_EMAIL,
+            to,
+            subject,
+            text,
+        });
+    } catch (err) {
+        console.error('Error sending due-today notification email:', err);
+    }
+}
+
+/**
+ * Send overdue notification to borrower
+ * @param to Borrower email address
+ * @param name Borrower name
+ * @param itemName Name of the item
+ * @param dueDate Date object representing due date/time
+ */
+export async function sendOverdueNotice(
+    to: string,
+    name: string,
+    itemName: string,
+    dueDate: Date
+): Promise<void> {
+    const dueDateStr = dueDate.toLocaleString('en-US', { dateStyle: 'full' });
+    const subject = `OVERDUE: '${itemName}' was due on ${dueDateStr}`;
+    const text = `Hello ${name},
+
+The item '${itemName}' you borrowed was due on ${dueDateStr} and is now OVERDUE.
+
+Please return this item immediately.
+
+If you have any questions or need assistance, please contact the Comm Tech Department.
+
+Thank you,
+Comm Tech Dept.`;
+
+    try {
+        await transporter.sendMail({
+            from: process.env.FROM_EMAIL,
+            to,
+            subject,
+            text,
+        });
+    } catch (err) {
+        console.error('Error sending overdue notification email:', err);
+    }
+}
+
+/**
+ * Notify administrators about overdue items
+ * @param borrowerName Name of borrower
+ * @param borrowerEmail Email of borrower
+ * @param itemName Name of the overdue item
+ * @param dueDate Date object representing due date/time
+ * @param admins Array of admin email addresses
+ */
+export async function notifyAdminsOverdue(
+    borrowerName: string,
+    borrowerEmail: string,
+    itemName: string,
+    dueDate: Date,
+    admins: string[]
+): Promise<void> {
+    const dueDateStr = dueDate.toLocaleString('en-US', { dateStyle: 'full' });
+    const subject = `Alert: Item '${itemName}' is OVERDUE`;
+    const text = `Hello Admin,
+
+The following item is now overdue:
+
+Item: ${itemName}
+Borrower: ${borrowerName} (${borrowerEmail})
+Due Date: ${dueDateStr}
+
+This item has not been returned on time. An overdue notice has been automatically sent to the borrower.
+
+Regards,
+Comm Tech Dept. Bot`;
+
+    try {
+        await transporter.sendMail({
+            from: process.env.FROM_EMAIL,
+            to: admins.join(','),
+            subject,
+            text,
+        });
+    } catch (err) {
+        console.error('Error sending admin overdue alert email:', err);
+    }
+}
+
+/**
+ * Notify administrators when an item is borrowed
+ * @param borrowerName Name of borrower
+ * @param borrowerEmail Email of borrower
+ * @param itemName Name of the borrowed item
+ * @param dueDate Date object representing due date/time
+ * @param admins Array of admin email addresses
+ */
+export async function notifyAdminsBorrow(
+    borrowerName: string,
+    borrowerEmail: string,
+    itemName: string,
+    dueDate: Date,
+    admins: string[]
+): Promise<void> {
+    const dueDateStr = dueDate.toLocaleString('en-US', { dateStyle: 'full' });
+    const subject = `Item Borrowed: '${itemName}' by ${borrowerName}`;
+    const text = `Hello Admin,
+
+The following item has been borrowed:
+
+Item: ${itemName}
+Borrower: ${borrowerName} (${borrowerEmail})
+Due Date: ${dueDateStr}
+
+Regards,
+Comm Tech Dept. Bot`;
+
+    try {
+        await transporter.sendMail({
+            from: process.env.FROM_EMAIL,
+            to: admins.join(','),
+            subject,
+            text,
+        });
+    } catch (err) {
+        console.error('Error sending admin borrow notification email:', err);
     }
 }
