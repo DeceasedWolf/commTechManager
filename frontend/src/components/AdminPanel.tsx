@@ -18,6 +18,12 @@ interface BorrowRecord {
     borrowedAt: string;
 }
 
+interface EmailPreferences {
+    adminOverdueAlert: boolean;
+    adminBorrowNotification: boolean;
+    adminReturnNotification: boolean;
+}
+
 // Helper function to check due date status
 const getDueDateStatus = (dueDateStr: string): 'overdue' | 'dueToday' | 'upcoming' => {
     const today = new Date();
@@ -55,6 +61,15 @@ const AdminPanel: React.FC = () => {
     const [adminToRemove, setAdminToRemove] = useState<string | null>(null);
     const [removingAdmin, setRemovingAdmin] = useState(false);
 
+    // Email preferences state
+    const [emailPreferences, setEmailPreferences] = useState<EmailPreferences>({
+        adminOverdueAlert: true,
+        adminBorrowNotification: true,
+        adminReturnNotification: true
+    });
+    const [savingPreferences, setSavingPreferences] = useState(false);
+    const [preferencesMessage, setPreferencesMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
@@ -69,6 +84,15 @@ const AdminPanel: React.FC = () => {
                 setItems(itemsRes.data);
                 setBorrows(borrowsRes.data);
                 setAdmins(adminsRes.data);
+                
+                // Fetch email preferences
+                try {
+                    const preferencesRes = await api.get<EmailPreferences>('/admin/email-preferences');
+                    setEmailPreferences(preferencesRes.data);
+                } catch (prefErr) {
+                    console.error('Failed to load email preferences:', prefErr);
+                    // Continue with default preferences
+                }
             } catch (err) {
                 console.error(err);
                 setError('Failed to load admin data');
@@ -161,6 +185,41 @@ const AdminPanel: React.FC = () => {
         }
     };
 
+    // Handle toggling email preferences
+    const handleTogglePreference = (preference: keyof EmailPreferences) => {
+        setEmailPreferences(prev => ({
+            ...prev,
+            [preference]: !prev[preference]
+        }));
+    };
+
+    // Handle saving email preferences
+    const handleSavePreferences = async () => {
+        setSavingPreferences(true);
+        setPreferencesMessage(null);
+        
+        try {
+            const response = await api.post('/admin/email-preferences', emailPreferences);
+            setPreferencesMessage({
+                type: 'success',
+                text: 'Email preferences saved successfully!'
+            });
+        } catch (err) {
+            console.error('Error saving preferences:', err);
+            setPreferencesMessage({
+                type: 'error',
+                text: 'Failed to save email preferences.'
+            });
+        } finally {
+            setSavingPreferences(false);
+            
+            // Clear the message after 3 seconds
+            setTimeout(() => {
+                setPreferencesMessage(null);
+            }, 3000);
+        }
+    };
+
     if (loading) return <div>Loading admin data…</div>;
     if (error) return <div style={{color: 'red'}}>{error}</div>;
 
@@ -181,6 +240,9 @@ const AdminPanel: React.FC = () => {
                             </Nav.Item>
                             <Nav.Item className="flex-grow-1">
                                 <Nav.Link eventKey="admins" className="text-center">Admins ({admins.length})</Nav.Link>
+                            </Nav.Item>
+                            <Nav.Item className="flex-grow-1">
+                                <Nav.Link eventKey="preferences" className="text-center">Email Preferences</Nav.Link>
                             </Nav.Item>
                         </Nav>
                     </Col>
@@ -465,6 +527,76 @@ const AdminPanel: React.FC = () => {
                                             </form>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </section>
+                    </Tab.Pane>
+
+                    {/* Email Preferences Tab */}
+                    <Tab.Pane eventKey="preferences">
+                        <section>
+                            <h2>Email Notification Preferences</h2>
+                            <p className="text-muted mb-4">
+                                Customize which administrator notifications you receive. As an admin, you will not receive regular user due today or overdue notices.
+                            </p>
+
+                            <div className="card">
+                                <div className="card-header bg-light">
+                                    <h5 className="mb-0">Administrator Notification Settings</h5>
+                                </div>
+                                <div className="card-body">
+                                    <div className="mb-4">
+                                        <div className="form-check form-switch mb-2">
+                                            <input 
+                                                className="form-check-input" 
+                                                type="checkbox" 
+                                                id="adminOverdueToggle"
+                                                checked={emailPreferences.adminOverdueAlert}
+                                                onChange={() => handleTogglePreference('adminOverdueAlert')}
+                                            />
+                                            <label className="form-check-label" htmlFor="adminOverdueToggle">
+                                                Admin Overdue Alerts - Receive notifications when items become overdue
+                                            </label>
+                                        </div>
+                                        <div className="form-check form-switch mb-2">
+                                            <input 
+                                                className="form-check-input" 
+                                                type="checkbox" 
+                                                id="adminBorrowToggle"
+                                                checked={emailPreferences.adminBorrowNotification}
+                                                onChange={() => handleTogglePreference('adminBorrowNotification')}
+                                            />
+                                            <label className="form-check-label" htmlFor="adminBorrowToggle">
+                                                Borrow Notifications - Receive notifications when items are borrowed
+                                            </label>
+                                        </div>
+                                        <div className="form-check form-switch">
+                                            <input 
+                                                className="form-check-input" 
+                                                type="checkbox" 
+                                                id="adminReturnToggle"
+                                                checked={emailPreferences.adminReturnNotification}
+                                                onChange={() => handleTogglePreference('adminReturnNotification')}
+                                            />
+                                            <label className="form-check-label" htmlFor="adminReturnToggle">
+                                                Return Notifications - Receive notifications when items are returned
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        className="btn btn-primary" 
+                                        onClick={handleSavePreferences}
+                                        disabled={savingPreferences}
+                                    >
+                                        {savingPreferences ? 'Saving...' : 'Save Preferences'}
+                                    </button>
+
+                                    {preferencesMessage && (
+                                        <div className={`alert mt-3 ${preferencesMessage.type === 'success' ? 'alert-success' : 'alert-danger'}`}>
+                                            {preferencesMessage.text}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </section>

@@ -1,0 +1,5 @@
+{
+  "adminOverdueAlert": true,
+  "adminBorrowNotification": true,
+  "adminReturnNotification": true
+}
