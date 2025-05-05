@@ -389,31 +389,45 @@ const AdminPanel: React.FC = () => {
                                         const isBorrowed = borrowedIds.has(item.id);
 
                                         return (
-                                            <div className="col-md-4 mb-3" key={item.id}>
-                                                <div className={`card h-100 position-relative ${isBorrowed ? 'bg-light border-warning border-5' : ''}`}>
-                                                {/* Borrowed badge */}
-                                                    {isBorrowed && (
-                                                        <span
-                                                            className="badge bg-warning text-dark position-absolute top-0 end-0 m-2">
-                                                            Borrowed
-                                                        </span>
-                                                    )}
-
-                                                    {item.imagePath && (
+                                            <div className="col-md-4 mb-3 d-flex" key={item.id}>
+                                                <div className="card flex-fill d-flex flex-column">
+                                                    {/* 1) image or blank */}
+                                                    {item.imagePath ? (
                                                         <img
                                                             src={`http://localhost:8080${item.imagePath}`}
                                                             className="card-img-top"
                                                             alt={item.name}
+                                                            style={{
+                                                                height: '200px',
+                                                                width: '100%',
+                                                                objectFit: 'contain',
+                                                                backgroundColor: '#f8f9fa'  // optional: light gray background so letterboxing isn't just white
+                                                            }}
                                                         />
+                                                    ) : (
+                                                        <div className="bg-light w-100" style={{ height: '200px' }} />
                                                     )}
-                                                    <div className="card-body">
-                                                        <h5 className="card-title">{item.name}</h5>
-                                                        <p className="card-text">{item.description}</p>
 
-                                                        {/* Only allow delete when not borrowed */}
-                                                        {!isBorrowed && (
+                                                    {/* 2) body with justify-content-end */}
+                                                    <div className="card-body d-flex flex-column justify-content-end">
+                                                        <h5 className="card-title">{item.name}</h5>
+                                                        <p
+                                                            className="card-text"
+                                                            style={{
+                                                                // tweak this to whatever single-line height you want
+                                                                minHeight: '1.2rem',
+                                                                marginBottom: '0.5rem',
+                                                            }}
+                                                        >
+                                                            {item.description || '\u00A0'}
+                                                        </p>
+                                                    </div>
+
+                                                    {/* 3) footer always at bottom */}
+                                                    {!isBorrowed && (
+                                                        <div className="card-footer p-2">
                                                             <button
-                                                                className="btn btn-danger"
+                                                                className="btn btn-danger w-100"
                                                                 onClick={async () => {
                                                                     await api.delete(`/admin/items/${item.id}`);
                                                                     setItems(items.filter(i => i.id !== item.id));
@@ -421,8 +435,8 @@ const AdminPanel: React.FC = () => {
                                                             >
                                                                 Delete
                                                             </button>
-                                                        )}
-                                                    </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
