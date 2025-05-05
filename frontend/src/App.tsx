@@ -4,6 +4,7 @@ import SignIn from './components/SignIn';
 import BorrowPanel from './components/BorrowPanel';
 import AdminPanel from './components/AdminPanel';
 import { getCurrentUser } from './services/auth';
+import { ThemeProvider } from './context/ThemeContext';
 
 type User = { email: string; name?: string; isAdmin: boolean };
 
@@ -22,13 +23,15 @@ const App: React.FC = () => {
     if (!user) return <SignIn />;
 
     return (
-        <Routes>
-            <Route path="/" element={
-                user.isAdmin ? <Navigate to="/admin" replace /> : <Navigate to="/borrow" replace />
-            } />
-            <Route path="/borrow" element={<BorrowPanel />} />
-            <Route path="/admin" element={user.isAdmin ? <AdminPanel /> : <Navigate to="/borrow" replace />} />
-        </Routes>
+        <ThemeProvider>
+            <Routes>
+                <Route path="/" element={
+                    user.isAdmin ? <Navigate to="/admin" replace /> : <Navigate to="/borrow" replace />
+                } />
+                <Route path="/borrow" element={<BorrowPanel />} />
+                <Route path="/admin" element={user.isAdmin ? <AdminPanel /> : <Navigate to="/borrow" replace />} />
+            </Routes>
+        </ThemeProvider>
     );
 };
 

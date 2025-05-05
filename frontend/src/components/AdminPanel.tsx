@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import api from '../services/api';
 import { Nav, Tab, Row, Col } from 'react-bootstrap';
 import Navbar from './Navbar';
+import { useTheme } from '../context/ThemeContext';
 
 interface Item {
     id: number;
@@ -39,6 +40,7 @@ const getDueDateStatus = (dueDateStr: string): 'overdue' | 'dueToday' | 'upcomin
 };
 
 const AdminPanel: React.FC = () => {
+    const { darkMode } = useTheme();
     const [items, setItems] = useState<Item[]>([]);
     const [borrows, setBorrows] = useState<BorrowRecord[]>([]);
     const [admins, setAdmins] = useState<string[]>([]);
@@ -224,6 +226,9 @@ const AdminPanel: React.FC = () => {
     if (loading) return <div>Loading admin data…</div>;
     if (error) return <div style={{color: 'red'}}>{error}</div>;
 
+    // Define the background color based on dark mode
+    const imageBackgroundColor = darkMode ? '#343a40' : '#f8f9fa';
+
     return (
         <>
             <Navbar />
@@ -393,23 +398,30 @@ const AdminPanel: React.FC = () => {
 
                                             return (
                                                 <div className="col-md-4 mb-3 d-flex" key={item.id}>
-                                                    <div className="card flex-fill d-flex flex-column">
-                                                        {/* 1) image or blank */}
-                                                        {item.imagePath ? (
-                                                            <img
-                                                                src={`http://localhost:8080${item.imagePath}`}
-                                                                className="card-img-top"
-                                                                alt={item.name}
-                                                                style={{
-                                                                    height: '200px',
-                                                                    width: '100%',
-                                                                    objectFit: 'contain',
-                                                                    backgroundColor: '#f8f9fa'  // optional: light gray background so letterboxing isn't just white
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <div className="bg-light w-100" style={{ height: '200px' }} />
-                                                        )}
+                                                    <div className={`card flex-fill d-flex flex-column ${darkMode ? 'bg-dark text-light' : ''}`}>
+                                                        {/* Image container with consistent background */}
+                                                        <div
+                                                            style={{
+                                                                height: '200px',
+                                                                width: '100%',
+                                                                backgroundColor: imageBackgroundColor,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center'
+                                                            }}
+                                                        >
+                                                            {item.imagePath && (
+                                                                <img
+                                                                    src={`http://localhost:8080${item.imagePath}`}
+                                                                    alt={item.name}
+                                                                    style={{
+                                                                        maxHeight: '100%',
+                                                                        maxWidth: '100%',
+                                                                        objectFit: 'contain'
+                                                                    }}
+                                                                />
+                                                            )}
+                                                        </div>
 
                                                         {/* 2) body with justify-content-end */}
                                                         <div className="card-body d-flex flex-column justify-content-end">
@@ -428,7 +440,7 @@ const AdminPanel: React.FC = () => {
 
                                                         {/* 3) footer always at bottom */}
                                                         {!isBorrowed && (
-                                                            <div className="card-footer p-2">
+                                                            <div className={`card-footer p-2 ${darkMode ? 'bg-dark border-secondary' : ''}`}>
                                                                 <button
                                                                     className="btn btn-danger w-100"
                                                                     onClick={async () => {
@@ -553,15 +565,15 @@ const AdminPanel: React.FC = () => {
                         <Tab.Pane eventKey="preferences">
                             <section>
                                 <h2>Email Notification Preferences</h2>
-                                <p className="text-muted mb-4">
+                                <p className={`mb-4 ${darkMode ? 'text-light' : 'text-muted'}`}>
                                     Customize which administrator notifications you receive. As an admin, you will not receive regular user due today or overdue notices.
                                 </p>
 
-                                <div className="card">
-                                    <div className="card-header bg-light">
+                                <div className={`card ${darkMode ? 'bg-dark border-secondary' : ''}`}>
+                                    <div className={`card-header ${darkMode ? 'bg-dark text-light border-secondary' : 'bg-light'}`}>
                                         <h5 className="mb-0">Administrator Notification Settings</h5>
                                     </div>
-                                    <div className="card-body">
+                                    <div className={`card-body ${darkMode ? 'bg-dark text-light' : ''}`}>
                                         <div className="mb-4">
                                             <div className="form-check form-switch mb-2">
                                                 <input 
@@ -571,7 +583,7 @@ const AdminPanel: React.FC = () => {
                                                     checked={emailPreferences.adminOverdueAlert}
                                                     onChange={() => handleTogglePreference('adminOverdueAlert')}
                                                 />
-                                                <label className="form-check-label" htmlFor="adminOverdueToggle">
+                                                <label className={`form-check-label ${darkMode ? 'text-light' : ''}`} htmlFor="adminOverdueToggle">
                                                     Admin Overdue Alerts - Receive notifications when items become overdue
                                                 </label>
                                             </div>
@@ -583,7 +595,7 @@ const AdminPanel: React.FC = () => {
                                                     checked={emailPreferences.adminBorrowNotification}
                                                     onChange={() => handleTogglePreference('adminBorrowNotification')}
                                                 />
-                                                <label className="form-check-label" htmlFor="adminBorrowToggle">
+                                                <label className={`form-check-label ${darkMode ? 'text-light' : ''}`} htmlFor="adminBorrowToggle">
                                                     Borrow Notifications - Receive notifications when items are borrowed
                                                 </label>
                                             </div>
@@ -595,7 +607,7 @@ const AdminPanel: React.FC = () => {
                                                     checked={emailPreferences.adminReturnNotification}
                                                     onChange={() => handleTogglePreference('adminReturnNotification')}
                                                 />
-                                                <label className="form-check-label" htmlFor="adminReturnToggle">
+                                                <label className={`form-check-label ${darkMode ? 'text-light' : ''}`} htmlFor="adminReturnToggle">
                                                     Return Notifications - Receive notifications when items are returned
                                                 </label>
                                             </div>
@@ -625,20 +637,22 @@ const AdminPanel: React.FC = () => {
                 {adminToRemove && (
                     <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
                         <div className="modal-dialog">
-                            <div className="modal-content">
-                                <div className="modal-header">
+                            <div className={`modal-content ${darkMode ? 'bg-dark text-light' : ''}`}>
+                                <div className={`modal-header ${darkMode ? 'border-secondary' : ''}`}>
                                     <h5 className="modal-title">Confirm Administrator Removal</h5>
                                     <button 
                                         type="button" 
-                                        className="btn-close" 
+                                        className="btn-close"
                                         onClick={() => setAdminToRemove(null)}
+                                        aria-label="Close"
+                                        data-bs-theme={darkMode ? "dark" : "light"}
                                     ></button>
                                 </div>
-                                <div className="modal-body">
+                                <div className={`modal-body ${darkMode ? 'border-secondary' : ''}`}>
                                     <p>Are you sure you want to remove <strong>{adminToRemove}</strong> as an administrator?</p>
                                     <p className="text-danger">This action cannot be undone. The user will lose all administrative privileges.</p>
                                 </div>
-                                <div className="modal-footer">
+                                <div className={`modal-footer ${darkMode ? 'border-secondary' : ''}`}>
                                     <button 
                                         type="button" 
                                         className="btn btn-secondary" 

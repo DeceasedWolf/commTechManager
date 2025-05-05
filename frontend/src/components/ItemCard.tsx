@@ -1,6 +1,8 @@
 import React from 'react';
+import { Card, Button } from 'react-bootstrap';
+import { useTheme } from '../context/ThemeContext';
 
-export interface Props {
+interface ItemCardProps {
     id: number;
     name: string;
     description?: string;
@@ -10,45 +12,55 @@ export interface Props {
     disabled?: boolean;
 }
 
-const ItemCard: React.FC<Props> = ({ id, name, description, imagePath, onAction, actionLabel, disabled = false }) => {
+const ItemCard: React.FC<ItemCardProps> = ({ id, name, description, imagePath, onAction, actionLabel, disabled }) => {
+    const { darkMode } = useTheme();
+    
+    // Define the background color based on dark mode
+    const imageBackgroundColor = darkMode ? '#343a40' : '#f8f9fa';
+    
     return (
-        <div className="card m-2" style={{ width: '18rem', display: 'flex', flexDirection: 'column', height: '400px' }}>
-            {/* Image container with fixed height */}
-            <div style={{ height: '200px', overflow: 'hidden', backgroundColor: '#f8f9fa' }}>
-                {imagePath ? (
-                    <img
+        <Card 
+            className={`m-2 ${darkMode ? 'bg-dark text-light border-secondary' : ''}`} 
+            style={{ width: '18rem', display: 'flex', flexDirection: 'column' }}
+        >
+            {/* Image area with consistent background color */}
+            <div 
+                style={{ 
+                    height: '200px', 
+                    backgroundColor: imageBackgroundColor,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center' 
+                }}
+            >
+                {imagePath && (
+                    <img 
                         src={`http://localhost:8080${imagePath}`}
-                        className="card-img-top"
                         alt={name}
-                        style={{
-                            height: '100%',
-                            width: '100%',
-                            objectFit: 'contain',
-                            objectPosition: 'center'
+                        style={{ 
+                            maxHeight: '100%',
+                            maxWidth: '100%',
+                            objectFit: 'contain'
                         }}
                     />
-                ) : (
-                    <div className="bg-light" style={{ height: '100%', width: '100%' }}></div>
                 )}
             </div>
-
-            {/* Content area that pushes to the bottom with flex */}
-            <div className="card-body d-flex flex-column" style={{ flex: 1 }}>
-                <div style={{ flex: 1 }}>
-                    <h5 className="card-title">{name}</h5>
-                    {description && <p className="card-text">{description}</p>}
-                </div>
+            
+            <Card.Body className="d-flex flex-column">
+                <Card.Title>{name}</Card.Title>
+                {description && <Card.Text>{description}</Card.Text>}
                 <div className="mt-auto">
-                    <button
-                        className="btn btn-primary w-100"
-                        onClick={() => onAction(id)}
+                    <Button 
+                        variant="primary" 
+                        onClick={() => onAction(id)} 
+                        className="w-100"
                         disabled={disabled}
                     >
                         {actionLabel}
-                    </button>
+                    </Button>
                 </div>
-            </div>
-        </div>
+            </Card.Body>
+        </Card>
     );
 };
 
