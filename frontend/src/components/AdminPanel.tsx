@@ -423,13 +423,11 @@ const AdminPanel: React.FC = () => {
                                                             )}
                                                         </div>
 
-                                                        {/* 2) body with justify-content-end */}
                                                         <div className="card-body d-flex flex-column justify-content-end">
                                                             <h5 className="card-title">{item.name}</h5>
                                                             <p
                                                                 className="card-text"
                                                                 style={{
-                                                                    // tweak this to whatever single-line height you want
                                                                     minHeight: '1.2rem',
                                                                     marginBottom: '0.5rem',
                                                                 }}
@@ -438,7 +436,6 @@ const AdminPanel: React.FC = () => {
                                                             </p>
                                                         </div>
 
-                                                        {/* 3) footer always at bottom */}
                                                         {!isBorrowed && (
                                                             <div className={`card-footer p-2 ${darkMode ? 'bg-dark border-secondary' : ''}`}>
                                                                 <button
