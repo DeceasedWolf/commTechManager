@@ -14,19 +14,24 @@ const ItemCard: React.FC<Props> = ({ id, name, description, imagePath, onAction,
     return (
         <div className="card m-2" style={{ width: '18rem', display: 'flex', flexDirection: 'column', height: '400px' }}>
             {/* Image container with fixed height */}
-            <div style={{ height: '200px', overflow: 'hidden' }}>
+            <div style={{ height: '200px', overflow: 'hidden', backgroundColor: '#f8f9fa' }}>
                 {imagePath ? (
                     <img
                         src={`http://localhost:8080${imagePath}`}
                         className="card-img-top"
                         alt={name}
-                        style={{ height: '100%', width: '100%', objectFit: 'cover' }}
+                        style={{
+                            height: '100%',
+                            width: '100%',
+                            objectFit: 'contain',
+                            objectPosition: 'center'
+                        }}
                     />
                 ) : (
                     <div className="bg-light" style={{ height: '100%', width: '100%' }}></div>
                 )}
             </div>
-            
+
             {/* Content area that pushes to the bottom with flex */}
             <div className="card-body d-flex flex-column" style={{ flex: 1 }}>
                 <div style={{ flex: 1 }}>
