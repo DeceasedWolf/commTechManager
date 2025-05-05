@@ -61,4 +61,17 @@ router.get(
     }
 );
 
+// New complete logout route to simply sign out and redirect to login page
+router.get(
+    '/complete-logout',
+    (req: Request, res: Response, next: NextFunction) => {
+        req.logout(err => {
+            if (err) {
+                return next(err);
+            }
+            res.redirect(`${FRONTEND_URL}/login`);
+        });
+    }
+);
+
 export default router;

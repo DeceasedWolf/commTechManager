@@ -12,5 +12,5 @@ export function signInWithGoogle() {
 }
 
 export function signOut() {
-    window.location.href = 'http://localhost:8080/auth/logout';
+    window.location.href = 'http://localhost:8080/auth/complete-logout';
 }
