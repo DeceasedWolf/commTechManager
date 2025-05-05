@@ -107,7 +107,8 @@ router.post('/', (async (req: Request, res: Response) => {
             data: {
                 userId: user.id,
                 itemId: Number(itemId),
-                dueDate: due
+                dueDate: due,
+                borrowedAt: new Date() // Add explicit borrowedAt timestamp
             },
             include: {
                 item: true,
@@ -115,18 +116,24 @@ router.post('/', (async (req: Request, res: Response) => {
             }
         });
 
-        // Notify admins about the new borrow
-        const admins = getAdminList();
-        await notifyAdminsBorrow(
-            borrow.user.name || borrow.user.email,
-            borrow.user.email,
-            borrow.item.name,
-            borrow.dueDate,
-            admins
-        );
+        try {
+            // Notify admins about the new borrow
+            const admins = getAdminList();
+            await notifyAdminsBorrow(
+                borrow.user.name || borrow.user.email,
+                borrow.user.email,
+                borrow.item.name,
+                borrow.dueDate,
+                admins
+            );
+        } catch (emailErr) {
+            // Log error but don't fail the request if email sending fails
+            console.error("Failed to send admin notification:", emailErr);
+        }
         
         return res.status(201).json(borrow);
     } catch (err) {
+        console.error("Borrow error:", err);
         return res.status(500).json({ error: 'Failed to create borrow record' });
     }
 }) as unknown as RequestHandler);

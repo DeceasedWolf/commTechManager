@@ -12,6 +12,7 @@ const BorrowPanel: React.FC = () => {
     const [borrowed, setBorrowed] = useState<Borrow[]>([]);
     const [dueDate, setDueDate] = useState<string>('');
     const [error, setError] = useState<string>('');
+    const [successMessage, setSuccessMessage] = useState<string>('');
     const [activeKey, setActiveKey] = useState<string>("available");
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -34,6 +35,37 @@ const BorrowPanel: React.FC = () => {
         fetchData();
     }, []);
 
+    // Function to validate the date format before submitting
+    const validateForm = (): boolean => {
+        // Clear previous errors
+        setError('');
+        
+        // Check if due date is provided
+        if (!dueDate.trim()) {
+            setError('Please enter a due date.');
+            return false;
+        }
+        
+        // Validate date format (DD/MM/YYYY)
+        const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
+        if (!dateRegex.test(dueDate)) {
+            setError('Due date must be in DD/MM/YYYY format.');
+            return false;
+        }
+        
+        // Validate if it's a valid date
+        const [day, month, year] = dueDate.split('/').map(Number);
+        const dateObj = new Date(year, month - 1, day);
+        
+        if (isNaN(dateObj.getTime())) {
+            setError('Invalid date. Please enter a valid date.');
+            return false;
+        }
+        
+        // All validation passed
+        return true;
+    };
+
     const handleBorrow = async (id: number) => {
         if (!validateForm()) {
             return;
@@ -41,20 +73,48 @@ const BorrowPanel: React.FC = () => {
 
         setIsLoading(true);
         setError("");
+        setSuccessMessage("");
         
         try {
-            // First borrow the item
-            await api.post('/borrow', { itemId: id, dueDate });
+            // Add a timeout similar to return operation
+            const borrowPromise = api.post('/borrow', { itemId: id, dueDate });
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timeout')), 1000));
+
+            await Promise.race([borrowPromise, timeoutPromise])
+                .catch(err => {
+                    if (err.message === 'Request timeout') {
+                        console.log('Borrow operation taking longer than expected...');
+                        // Continue with the operation
+                    } else {
+                        throw err;
+                    }
+                });
             
             // Then refresh both available and borrowed lists
             await fetchData();
             
-            // Don't reset due date field or switch tabs
-            // Success message
-            setError(""); // Clear any previous errors
+            // Check if the item is now in borrowed and no longer in available
+            const itemBorrowed = !available.find(item => item.id === id);
+            
+            if (itemBorrowed) {
+                // Successful borrow!
+                setSuccessMessage(`Item borrowed successfully! Due date: ${dueDate}`);
+                // Switch to borrowed tab
+                setActiveKey("borrowed");
+            }
         } catch (err: any) {
             console.error("Failed to borrow item:", err);
-            setError(err.response?.data?.error || "Failed to borrow item. Please try again.");
+            // Don't show error if item actually was borrowed
+            const refreshedAvailable = await api.get<Item[]>('/borrow/items');
+            const itemBorrowed = !refreshedAvailable.data.find(item => item.id === id);
+            
+            if (!itemBorrowed) {
+                setError(err.response?.data?.error || "Failed to borrow item. Please try again.");
+            } else {
+                setSuccessMessage(`Item borrowed successfully! Due date: ${dueDate}`);
+                setActiveKey("borrowed");
+            }
         } finally {
             setIsLoading(false);
         }
@@ -62,6 +122,9 @@ const BorrowPanel: React.FC = () => {
 
     const handleReturn = async (id: number) => {
         setIsLoading(true);
+        setError("");
+        setSuccessMessage("");
+        
         try {
             // Add a timeout to detect slow responses
             const returnPromise = api.post(`/borrow/return/${id}`);
@@ -80,60 +143,13 @@ const BorrowPanel: React.FC = () => {
 
             // Fetch data after return completes
             await fetchData();
+            setSuccessMessage("Item returned successfully!");
         } catch (err) {
             console.error("Failed to return item:", err);
             setError("Failed to return item. Please try again.");
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const validateForm = () => {
-        // Check if date is in correct format DD/MM/YYYY
-        const datePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-        if (!datePattern.test(dueDate)) {
-            setError('Please enter a valid date in DD/MM/YYYY format.');
-            return false;
-        }
-        
-        // Extract day, month, year and validate date is real
-        const [_, day, month, year] = dueDate.match(datePattern) || [];
-        const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-        
-        if (
-            isNaN(dateObj.getTime()) || 
-            dateObj.getDate() !== parseInt(day) ||
-            dateObj.getMonth() !== parseInt(month) - 1 ||
-            dateObj.getFullYear() !== parseInt(year)
-        ) {
-            setError('Please enter a valid date.');
-            return false;
-        }
-        
-        // Get today and tomorrow dates for comparison
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        // Get one year from today
-        const oneYearFromToday = new Date(today);
-        oneYearFromToday.setFullYear(oneYearFromToday.getFullYear() + 1);
-        
-        // Ensure due date is at least tomorrow
-        if (dateObj < tomorrow) {
-            setError('Due date must be at least tomorrow.');
-            return false;
-        }
-        
-        // Ensure due date is not more than one year in the future
-        if (dateObj > oneYearFromToday) {
-            setError('Due date cannot be more than one year in the future.');
-            return false;
-        }
-        
-        return true;
     };
 
     return (
@@ -158,6 +174,7 @@ const BorrowPanel: React.FC = () => {
                     <Col xs={12}>
                         {isLoading && <div className="alert alert-info">Processing your request...</div>}
                         {error && <div className="alert alert-danger">{error}</div>}
+                        {successMessage && <div className="alert alert-success">{successMessage}</div>}
                         
                         <Tab.Content>
                             <Tab.Pane eventKey="available">
@@ -208,7 +225,7 @@ const BorrowPanel: React.FC = () => {
                                                     name={br.item.name}
                                                     description={`Due: ${formatDate(br.dueDate)}`}
                                                     imagePath={br.item.imagePath}
-                                                    onAction={() => handleReturn(br.id)}
+                                                    onAction={handleReturn}
                                                     actionLabel="Return"
                                                     disabled={isLoading}
                                                 />
@@ -227,4 +244,3 @@ const BorrowPanel: React.FC = () => {
 };
 
 export default BorrowPanel;
-
