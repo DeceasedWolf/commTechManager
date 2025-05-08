@@ -54,10 +54,17 @@ scheduleJobs(prisma);
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../../frontend/build')));
-    app.get('*', (_req, res) => {
-        res.sendFile(path.join(__dirname, '../../frontend/build', 'index.html'));
+    const staticPath = path.join(__dirname, '../../frontend/build');
+    console.log('Serving frontend from:', staticPath);
+
+    // Serve static assets first
+    app.use(express.static(staticPath));
+
+    // Fallback: match ANY path using a RegExp
+    app.get(/.*/, (_req, res) => {
+        res.sendFile(path.join(staticPath, 'index.html'));
     });
+
 }
 
 const PORT = process.env.PORT || 8080;
