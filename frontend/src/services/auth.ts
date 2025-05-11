@@ -1,4 +1,5 @@
 import api from './api';
+import config from '../config';
 
 type User = { email: string; name?: string; isAdmin: boolean };
 
@@ -8,9 +9,9 @@ export async function getCurrentUser(): Promise<User> {
 }
 
 export function signInWithGoogle() {
-    window.location.href = 'http://localhost:8080/auth/google';
+    window.location.href = `${config.API_URL}/auth/google`;
 }
 
 export function signOut() {
-    window.location.href = 'http://localhost:8080/auth/complete-logout';
+    window.location.href = `${config.API_URL}/auth/complete-logout`;
 }
