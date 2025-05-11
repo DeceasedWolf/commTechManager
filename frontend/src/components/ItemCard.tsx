@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { useTheme } from '../context/ThemeContext';
+import config from '../config';
 
 interface ItemCardProps {
     id: number;
@@ -35,7 +36,7 @@ const ItemCard: React.FC<ItemCardProps> = ({ id, name, description, imagePath, o
             >
                 {imagePath && (
                     <img 
-                        src={`http://localhost:8080${imagePath}`}
+                    src={`${config.API_URL}${imagePath}`}
                         alt={name}
                         style={{ 
                             maxHeight: '100%',

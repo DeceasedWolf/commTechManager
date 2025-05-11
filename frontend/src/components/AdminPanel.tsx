@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Nav, Tab, Row, Col } from 'react-bootstrap';
 import Navbar from './Navbar';
 import { useTheme } from '../context/ThemeContext';
+import config from '../config';
 
 interface Item {
     id: number;
@@ -412,7 +413,7 @@ const AdminPanel: React.FC = () => {
                                                         >
                                                             {item.imagePath && (
                                                                 <img
-                                                                    src={`http://localhost:8080${item.imagePath}`}
+                                                                    src={`${config.API_URL}${item.imagePath}`}
                                                                     alt={item.name}
                                                                     style={{
                                                                         maxHeight: '100%',

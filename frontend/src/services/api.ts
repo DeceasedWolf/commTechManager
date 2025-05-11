@@ -1,10 +1,11 @@
 import axios, { AxiosResponse } from 'axios';
+import config from '../config';
 
 // Set a default timeout
 const DEFAULT_TIMEOUT = 10000;
 
 const api = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
+    baseURL: config.API_URL || 'http://localhost:8080',
     withCredentials: true,
     timeout: DEFAULT_TIMEOUT,
     headers: {
