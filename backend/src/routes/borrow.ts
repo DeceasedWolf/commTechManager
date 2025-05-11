@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
+import { Router, Request, Response, RequestHandler } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { ensureAuth } from '../middlewares/ensureAuth';
 import { sendReturnNotice, notifyAdminsBorrow } from '../services/mailer';
@@ -83,16 +83,13 @@ router.post('/', (async (req: Request, res: Response) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
         // Get one year from today
         const oneYearFromToday = new Date(today);
         oneYearFromToday.setFullYear(oneYearFromToday.getFullYear() + 1);
         
-        // Validate that due date is at least tomorrow
-        if (due < tomorrow) {
-            return res.status(400).json({ error: 'Due date must be at least tomorrow.' });
+        // Validate that due date is at least today
+        if (due < today) {
+            return res.status(400).json({ error: 'Due date must be at least today.' });
         }
         
         // Validate that due date is not more than one year in the future
